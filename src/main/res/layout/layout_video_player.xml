@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/constraintLayoutParent"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/color_black">
+
+    <FrameLayout
+        android:id="@+id/aspectRatioFrameLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <com.google.android.exoplayer2.ui.SimpleExoPlayerView
+            android:id="@+id/simpleExoPlayerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <ImageView
+            android:id="@+id/imageViewVolume"
+            android:layout_width="@dimen/size_thirty_five"
+            android:layout_height="@dimen/size_thirty_five"
+            android:layout_gravity="left|top"
+            android:layout_margin="@dimen/size_ten"
+            android:background="@drawable/drawble_rounded_transparent"
+            android:padding="@dimen/size_ten"
+            android:src="@drawable/drawable_volume_selector" />
+
+        <android.support.v4.widget.ContentLoadingProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="@dimen/size_fifty"
+            android:layout_height="@dimen/size_fifty"
+            android:layout_gravity="center"
+            android:background="@drawable/drawble_rounded_transparent_with_stroke"
+            android:padding="@dimen/size_ten"
+            android:visibility="gone" />
+
+        <ImageView
+            android:id="@+id/imageViewPlay"
+            android:layout_width="@dimen/size_fifty"
+            android:layout_height="@dimen/size_fifty"
+            android:layout_gravity="center"
+            android:background="@drawable/drawble_rounded_transparent_with_stroke"
+            android:padding="@dimen/size_five"
+            android:visibility="gone"
+            app:srcCompat="@drawable/exo_controls_play" />
+
+        <ImageView
+            android:id="@+id/imageViewPause"
+            android:layout_width="@dimen/size_fifty"
+            android:layout_height="@dimen/size_fifty"
+            android:layout_gravity="center"
+            android:background="@drawable/drawble_rounded_transparent_with_stroke"
+            android:padding="@dimen/size_five"
+            android:visibility="gone"
+            app:srcCompat="@drawable/exo_controls_pause" />
+
+    </FrameLayout>
+
+    <LinearLayout
+        android:id="@+id/linearLayoutControls"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/size_fifty"
+        android:background="@color/color_transparent"
+        android:orientation="horizontal"
+        android:padding="@dimen/size_ten"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/aspectRatioFrameLayout">
+
+        <TextView
+            android:id="@+id/textViewPlayBackPosition"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center_vertical|center_horizontal|center"
+            android:text="0:00"
+            android:textColor="@color/color_white"
+            android:textSize="@dimen/size_ten"
+            android:textStyle="bold" />
+
+        <SeekBar
+            android:id="@+id/seekBarVideo"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="10"
+            android:maxHeight="@dimen/size_three"
+            android:minHeight="@dimen/size_three"
+            android:progressDrawable="@drawable/drawable_seekbar"
+            android:thumbTint="@color/color_white" />
+
+        <TextView
+            android:id="@+id/textViewPlayBackRemaining"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center_vertical|center_horizontal|center"
+            android:text="0.00"
+            android:textColor="@color/color_white"
+            android:textSize="@dimen/size_ten"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+</android.support.constraint.ConstraintLayout>
