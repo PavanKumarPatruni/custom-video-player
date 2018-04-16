@@ -1,6 +1,7 @@
 package com.pavanpathro.custom_video_player;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.PorterDuff;
 import android.net.Uri;
 import android.os.Handler;
@@ -8,7 +9,6 @@ import android.os.PowerManager;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Surface;
 import android.view.View;
@@ -47,6 +47,10 @@ import java.util.Locale;
 
 public class CustomVideoPlayer extends LinearLayout {
 
+    private static final String SHARED_PREF_NAME = "CUSTOM_VIDEO_PLAYER";
+    private static final int PRIVATE_MODE = 0;
+    private static final String KEY_VOLUME = "VOLUME_SETTINGS";
+
     private Context context;
 
     private SimpleExoPlayerView simpleExoPlayerView;
@@ -71,6 +75,7 @@ public class CustomVideoPlayer extends LinearLayout {
     private boolean autoPlay;
     private boolean autoMute;
     private boolean hideControllers;
+    private boolean autoMuteSetByUser;
 
     private boolean playVideo;
     private boolean buffering;
@@ -78,6 +83,8 @@ public class CustomVideoPlayer extends LinearLayout {
     private boolean isVideoViewClicked;
 
     private PlaybackListener playbackListener;
+
+    private SharedPreferences sharedPreferences;
 
     public CustomVideoPlayer(Context context) {
         super(context);
@@ -108,6 +115,8 @@ public class CustomVideoPlayer extends LinearLayout {
     }
 
     public CustomVideoPlayer enableAutoMute(boolean autoMute) {
+        autoMuteSetByUser = true;
+
         this.autoMute = autoMute;
         return this;
     }
@@ -149,6 +158,8 @@ public class CustomVideoPlayer extends LinearLayout {
 
     private void init(Context context) {
         this.context = context;
+
+        sharedPreferences = context.getSharedPreferences(SHARED_PREF_NAME, PRIVATE_MODE);
 
         PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.FULL_WAKE_LOCK, "Full Wake Lock");
@@ -208,11 +219,24 @@ public class CustomVideoPlayer extends LinearLayout {
                 setPlayVisible();
             }
 
+            getVolumeSettings();
             manageMute();
 
             this.addView(view);
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void saveVolumeSettings() {
+        SharedPreferences.Editor sharedPreferencesEditor = sharedPreferences.edit();
+        sharedPreferencesEditor.putBoolean(KEY_VOLUME, autoMute);
+        sharedPreferencesEditor.apply();
+    }
+
+    private void getVolumeSettings() {
+        if (!autoMuteSetByUser) {
+            autoMute = sharedPreferences.getBoolean(KEY_VOLUME, false);
         }
     }
 
@@ -348,6 +372,7 @@ public class CustomVideoPlayer extends LinearLayout {
         } else {
             exoPlayer.setVolume(1f);
         }
+        saveVolumeSettings();
     }
 
     private class VideoPlayerListener implements View.OnClickListener, SeekBar.OnSeekBarChangeListener, ExoPlayer.EventListener, VideoRendererEventListener, AudioRendererEventListener {
