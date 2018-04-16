@@ -9,6 +9,7 @@ import android.os.PowerManager;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Surface;
 import android.view.View;
@@ -78,6 +79,7 @@ public class CustomVideoPlayer extends LinearLayout {
     private boolean autoMuteSetByUser;
 
     private boolean playVideo;
+    private boolean pauseVideo;
     private boolean buffering;
 
     private boolean isVideoViewClicked;
@@ -85,6 +87,12 @@ public class CustomVideoPlayer extends LinearLayout {
     private PlaybackListener playbackListener;
 
     private SharedPreferences sharedPreferences;
+
+    private Handler seekBarHandler;
+    private Runnable seekBarRunnable;
+
+    private Handler controllersHandler;
+    private Runnable controllersRunnable;
 
     public CustomVideoPlayer(Context context) {
         super(context);
@@ -158,6 +166,23 @@ public class CustomVideoPlayer extends LinearLayout {
 
     private void init(Context context) {
         this.context = context;
+
+        seekBarHandler = new Handler();
+        seekBarRunnable = new Runnable() {
+            @Override
+            public void run() {
+                updateTimers();
+            }
+        };
+
+        controllersHandler = new Handler();
+        controllersRunnable = new Runnable() {
+            @Override
+            public void run() {
+                isVideoViewClicked = false;
+                setControlsInvisible();
+            }
+        };
 
         sharedPreferences = context.getSharedPreferences(SHARED_PREF_NAME, PRIVATE_MODE);
 
@@ -247,7 +272,9 @@ public class CustomVideoPlayer extends LinearLayout {
     }
 
     private void setPlayInvisible() {
-        imageViewPlay.setVisibility(GONE);
+        if (!pauseVideo) {
+            imageViewPlay.setVisibility(GONE);
+        }
     }
 
     private void setControlsVisible() {
@@ -262,13 +289,7 @@ public class CustomVideoPlayer extends LinearLayout {
     }
 
     private void setControlsDelayInvisible() {
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                setControlsInvisible();
-                isVideoViewClicked = false;
-            }
-        }, 10 * 1007);
+        controllersHandler.postDelayed(controllersRunnable, 10 * 1007);
     }
 
     private void setControlsInvisible() {
@@ -295,18 +316,17 @@ public class CustomVideoPlayer extends LinearLayout {
             seekBarVideo.setProgress((int) (exoPlayer.getCurrentPosition()));
 
             if (playVideo) {
-                setPlayInvisible();
-                if (!isVideoViewClicked) {
+                if (imageViewPlay.getVisibility() == VISIBLE) {
+                    setPlayInvisible();
+                }
+
+                if (!isVideoViewClicked && imageViewPause.getVisibility() == VISIBLE) {
                     setControlsDelayInvisible();
                 }
             }
 
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    updateTimers();
-                }
-            }, 1007);
+            seekBarHandler.postDelayed(seekBarRunnable, 1007);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -315,9 +335,11 @@ public class CustomVideoPlayer extends LinearLayout {
     private void pausePlayBack() {
         if (exoPlayer != null) {
 
+            pauseVideo = true;
+
             playVideo = false;
 
-            playbackListener.onPlayEvent();
+            playbackListener.onPauseEvent();
 
             setControlsInvisible();
             setPlayVisible();
@@ -331,10 +353,13 @@ public class CustomVideoPlayer extends LinearLayout {
         if (exoPlayer != null) {
             playVideo = true;
 
+            pauseVideo = false;
+
             playbackListener.onPlayEvent();
 
             setPlayInvisible();
             setControlsInvisible();
+
             updateTimers();
 
             exoPlayer.setPlayWhenReady(true);
@@ -345,6 +370,14 @@ public class CustomVideoPlayer extends LinearLayout {
     private void releasePlayer() {
         if (exoPlayer != null) {
             playVideo = false;
+
+            context = null;
+
+            seekBarHandler.removeCallbacks(seekBarRunnable);
+            controllersHandler.removeCallbacks(controllersRunnable);
+
+            seekBarHandler = null;
+            controllersHandler = null;
 
             wakeLock.release();
 
@@ -383,8 +416,10 @@ public class CustomVideoPlayer extends LinearLayout {
             if (viewId == R.id.imageViewPlay) {
                 startPlayBack();
             } else if (viewId == R.id.constraintLayoutParent) {
-                isVideoViewClicked = true;
-                setControlsVisible();
+                if (imageViewPause.getVisibility() != VISIBLE) {
+                    isVideoViewClicked = true;
+                    setControlsVisible();
+                }
             } else if (viewId == R.id.imageViewPause) {
                 pausePlayBack();
             } else if (viewId == R.id.imageViewVolume) {
@@ -431,9 +466,7 @@ public class CustomVideoPlayer extends LinearLayout {
                     break;
                 case ExoPlayer.STATE_READY:
                     buffering = false;
-                    if (progressBar.getVisibility() != GONE) {
-                        progressBar.setVisibility(GONE);
-                    }
+                    progressBar.setVisibility(GONE);
                     wakeLock.acquire(exoPlayer.getDuration());
                     seekBarVideo.setMax((int) exoPlayer.getDuration());
                     setControlsInvisible();
@@ -458,9 +491,7 @@ public class CustomVideoPlayer extends LinearLayout {
                     setControlsInvisible();
                     progressBar.setVisibility(GONE);
                     setPlayVisible();
-
                     playbackListener.onCompleted();
-
                     break;
             }
         }
