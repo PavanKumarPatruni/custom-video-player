@@ -1,6 +1,6 @@
 # custom-video-player
 
-<b>to play</b>
+<b>initialize</b>
 
     CustomVideoPlayer customVideoPlayer = findViewById(R.id.customVideoPlayer);     
     customVideoPlayer.setMediaUrl("https://www.rmp-streaming.com/media/bbb-360p.mp4")
