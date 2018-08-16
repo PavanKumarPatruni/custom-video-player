@@ -9,8 +9,8 @@ import android.os.PowerManager;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
 import android.widget.ImageView;
@@ -44,6 +44,8 @@ import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
 import com.google.android.exoplayer2.video.VideoRendererEventListener;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 public class CustomVideoPlayer extends LinearLayout {
@@ -51,6 +53,7 @@ public class CustomVideoPlayer extends LinearLayout {
     private static final String SHARED_PREF_NAME = "CUSTOM_VIDEO_PLAYER";
     private static final int PRIVATE_MODE = 0;
     private static final String KEY_VOLUME = "VOLUME_SETTINGS";
+    private static final String WAKE_LOCK_NAME = "customvideoplayer:wakelock";
 
     private Context context;
 
@@ -60,6 +63,8 @@ public class CustomVideoPlayer extends LinearLayout {
     private ImageView imageViewVolume;
     private ImageView imageViewPlay;
     private ImageView imageViewPause;
+    private ImageView imageViewPrev;
+    private ImageView imageViewNext;
     private LinearLayout linearLayoutControls;
     private TextView textViewPlayBackPosition;
     private TextView textViewPlayBackRemaining;
@@ -70,7 +75,7 @@ public class CustomVideoPlayer extends LinearLayout {
 
     private PowerManager.WakeLock wakeLock;
 
-    private String mediaUrl = "";
+    private List<String> urlList;
     private long playBackPosition = 0;
 
     private boolean autoPlay;
@@ -94,6 +99,8 @@ public class CustomVideoPlayer extends LinearLayout {
     private Handler controllersHandler;
     private Runnable controllersRunnable;
 
+    private int urlIndex = 0;
+
     public CustomVideoPlayer(Context context) {
         super(context);
 
@@ -113,7 +120,14 @@ public class CustomVideoPlayer extends LinearLayout {
     }
 
     public CustomVideoPlayer setMediaUrl(String mediaUrl) {
-        this.mediaUrl = mediaUrl;
+        List<String> urlList = new ArrayList<>();
+        urlList.add(mediaUrl);
+        this.urlList = urlList;
+        return this;
+    }
+
+    public CustomVideoPlayer setMediaUrls(List<String> urlList) {
+        this.urlList = urlList;
         return this;
     }
 
@@ -187,7 +201,7 @@ public class CustomVideoPlayer extends LinearLayout {
         sharedPreferences = context.getSharedPreferences(SHARED_PREF_NAME, PRIVATE_MODE);
 
         PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-        wakeLock = powerManager.newWakeLock(PowerManager.FULL_WAKE_LOCK, "Full Wake Lock");
+        wakeLock = powerManager.newWakeLock(PowerManager.FULL_WAKE_LOCK, WAKE_LOCK_NAME);
 
         defaultBandwidthMeter = new DefaultBandwidthMeter();
         videoPlayerListener = new VideoPlayerListener();
@@ -221,22 +235,51 @@ public class CustomVideoPlayer extends LinearLayout {
             imageViewVolume = view.findViewById(R.id.imageViewVolume);
             imageViewPlay = view.findViewById(R.id.imageViewPlay);
             imageViewPause = view.findViewById(R.id.imageViewPause);
+            imageViewPrev = view.findViewById(R.id.imageViewPrev);
+            imageViewNext = view.findViewById(R.id.imageViewNext);
 
             linearLayoutControls = view.findViewById(R.id.linearLayoutControls);
             textViewPlayBackPosition = view.findViewById(R.id.textViewPlayBackPosition);
             textViewPlayBackRemaining = view.findViewById(R.id.textViewPlayBackRemaining);
             seekBarVideo = view.findViewById(R.id.seekBarVideo);
 
-            constraintLayoutParent.setOnClickListener(videoPlayerListener);
             imageViewVolume.setOnClickListener(videoPlayerListener);
             imageViewPlay.setOnClickListener(videoPlayerListener);
             imageViewPause.setOnClickListener(videoPlayerListener);
+            imageViewPrev.setOnClickListener(videoPlayerListener);
+            imageViewNext.setOnClickListener(videoPlayerListener);
             seekBarVideo.setOnSeekBarChangeListener(videoPlayerListener);
 
             simpleExoPlayerView.setUseController(false);
             simpleExoPlayerView.setPlayer(exoPlayer);
 
-            exoPlayer.prepare(buildMediaStore(), true, true);
+            prepareVideoPlayer();
+
+            this.addView(view);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void playNext() {
+        if (urlIndex < urlList.size()) {
+            urlIndex++;
+            prepareVideoPlayer();
+        } else {
+            urlIndex--;
+        }
+    }
+
+    private void playPrev() {
+        if (urlIndex != 0) {
+            urlIndex--;
+            prepareVideoPlayer();
+        }
+    }
+
+    private void prepareVideoPlayer() {
+        if (urlIndex < urlList.size()) {
+            exoPlayer.prepare(buildMediaStore(urlList.get(urlIndex)), true, true);
 
             if (autoPlay) {
                 startPlayBack();
@@ -246,11 +289,16 @@ public class CustomVideoPlayer extends LinearLayout {
 
             getVolumeSettings();
             manageMute();
-
-            this.addView(view);
-        } catch (Exception e) {
-            e.printStackTrace();
         }
+    }
+
+    private void resetVideoPlayer() {
+        playVideo = false;
+        playBackPosition = 0;
+        setControlsInvisible();
+        progressBar.setVisibility(GONE);
+        setPlayVisible();
+        playbackListener.onCompletedEvent();
     }
 
     private void saveVolumeSettings() {
@@ -277,14 +325,30 @@ public class CustomVideoPlayer extends LinearLayout {
         }
     }
 
-    private void setControlsVisible() {
+    private void setControlsVisibleWithConditions() {
         if (!hideControllers && playVideo && !buffering) {
-            if (imageViewPause.getVisibility() != VISIBLE) {
-                imageViewPause.setVisibility(VISIBLE);
-                linearLayoutControls.setVisibility(VISIBLE);
+            setControlsVisible();
+        }
+    }
 
-                setControlsDelayInvisible();
+    private void setControlsVisible() {
+        if (imageViewPause.getVisibility() != VISIBLE) {
+            imageViewPause.setVisibility(VISIBLE);
+            linearLayoutControls.setVisibility(VISIBLE);
+
+            if (urlList.size() > 1) {
+                if (urlIndex > 0) {
+                    imageViewPrev.setVisibility(VISIBLE);
+                }
+                if (urlIndex < urlList.size()-1) {
+                    imageViewNext.setVisibility(VISIBLE);
+                }
+            } else {
+                imageViewNext.setVisibility(INVISIBLE);
+                imageViewPrev.setVisibility(INVISIBLE);
             }
+
+            setControlsDelayInvisible();
         }
     }
 
@@ -295,6 +359,8 @@ public class CustomVideoPlayer extends LinearLayout {
     private void setControlsInvisible() {
         imageViewPause.setVisibility(GONE);
         linearLayoutControls.setVisibility(GONE);
+        imageViewPrev.setVisibility(INVISIBLE);
+        imageViewNext.setVisibility(INVISIBLE);
     }
 
     private String convertToTime(long time) {
@@ -334,9 +400,7 @@ public class CustomVideoPlayer extends LinearLayout {
 
     private void pausePlayBack() {
         if (exoPlayer != null) {
-
             pauseVideo = true;
-
             playVideo = false;
 
             playbackListener.onPauseEvent();
@@ -352,7 +416,6 @@ public class CustomVideoPlayer extends LinearLayout {
     private void startPlayBack() {
         if (exoPlayer != null) {
             playVideo = true;
-
             pauseVideo = false;
 
             playbackListener.onPlayEvent();
@@ -369,6 +432,7 @@ public class CustomVideoPlayer extends LinearLayout {
 
     private void releasePlayer() {
         if (exoPlayer != null) {
+            pauseVideo = true;
             playVideo = false;
 
             context = null;
@@ -389,7 +453,7 @@ public class CustomVideoPlayer extends LinearLayout {
         }
     }
 
-    private MediaSource buildMediaStore() {
+    private MediaSource buildMediaStore(String mediaUrl) {
         Uri videoUri = Uri.parse(mediaUrl);
 
         DataSource.Factory dataSourceFactory = new DefaultHttpDataSourceFactory("custom_video_player", defaultBandwidthMeter);
@@ -408,6 +472,15 @@ public class CustomVideoPlayer extends LinearLayout {
         saveVolumeSettings();
     }
 
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (imageViewPause.getVisibility() != VISIBLE) {
+            isVideoViewClicked = true;
+            setControlsVisibleWithConditions();
+        }
+        return true;
+    }
+
     private class VideoPlayerListener implements View.OnClickListener, SeekBar.OnSeekBarChangeListener, ExoPlayer.EventListener, VideoRendererEventListener, AudioRendererEventListener {
 
         @Override
@@ -415,16 +488,17 @@ public class CustomVideoPlayer extends LinearLayout {
             int viewId = view.getId();
             if (viewId == R.id.imageViewPlay) {
                 startPlayBack();
-            } else if (viewId == R.id.constraintLayoutParent) {
-                if (imageViewPause.getVisibility() != VISIBLE) {
-                    isVideoViewClicked = true;
-                    setControlsVisible();
-                }
             } else if (viewId == R.id.imageViewPause) {
                 pausePlayBack();
             } else if (viewId == R.id.imageViewVolume) {
                 autoMute = !autoMute;
                 manageMute();
+            } else if (viewId == R.id.imageViewPrev) {
+                playPrev();
+                prepareVideoPlayer();
+            } else if (viewId == R.id.imageViewNext) {
+                playNext();
+                prepareVideoPlayer();
             }
         }
 
@@ -465,6 +539,7 @@ public class CustomVideoPlayer extends LinearLayout {
                 case ExoPlayer.STATE_IDLE:
                     break;
                 case ExoPlayer.STATE_READY:
+                    playVideo = true;
                     buffering = false;
                     progressBar.setVisibility(GONE);
                     wakeLock.acquire(exoPlayer.getDuration());
@@ -486,12 +561,10 @@ public class CustomVideoPlayer extends LinearLayout {
                     }
                     break;
                 case ExoPlayer.STATE_ENDED:
-                    playVideo = false;
-                    playBackPosition = 0;
-                    setControlsInvisible();
-                    progressBar.setVisibility(GONE);
-                    setPlayVisible();
-                    playbackListener.onCompleted();
+                    resetVideoPlayer();
+                    if (urlIndex < urlList.size()) {
+                        playNext();
+                    }
                     break;
             }
         }
@@ -598,7 +671,7 @@ public class CustomVideoPlayer extends LinearLayout {
 
         void onPauseEvent();
 
-        void onCompleted();
+        void onCompletedEvent();
     }
 
 }
