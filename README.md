@@ -52,16 +52,8 @@
     
 <h3>Samples</h3>
 
-<div style="display: flex">
-    <div style="width: 100px">
-        <img src="https://github.com/PavanKumarPatruni/custom-video-player/blob/master/Screenshot_20180817-025314.jpg">
-    </div>
-    <div style="width: 100px">
-        <img src="https://github.com/PavanKumarPatruni/custom-video-player/blob/master/Screenshot_20180817-025359.jpg">
-    </div>
-    <div style="width: 100px">
-        <img src="https://github.com/PavanKumarPatruni/custom-video-player/blob/master/Screenshot_20180817-025409.jpg">
-    </div>
+<div>
+    <img src="https://github.com/PavanKumarPatruni/custom-video-player/blob/master/Screen%20Shot%202018-08-17%20at%203.32.24%20AM.png">
 </div>
 
 <h3>Video Controllers</h3>
