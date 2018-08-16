@@ -1,4 +1,4 @@
-# custom-video-player
+# Custom Video Player for Android
 
 <h3>Add to layout</h3>
 <br/>
@@ -50,6 +50,20 @@
         .setOnPlaybackListener(this)
         .build();
     
+<h3>Samples</h3>
+
+<div style="display: flex">
+    <div style="width: 100px">
+        <img src="https://github.com/PavanKumarPatruni/custom-video-player/blob/master/Screenshot_20180817-025314.jpg">
+    </div>
+    <div style="width: 100px">
+        <img src="https://github.com/PavanKumarPatruni/custom-video-player/blob/master/Screenshot_20180817-025359.jpg">
+    </div>
+    <div style="width: 100px">
+        <img src="https://github.com/PavanKumarPatruni/custom-video-player/blob/master/Screenshot_20180817-025409.jpg">
+    </div>
+</div>
+
 <h3>Video Controllers</h3>
 <br/>
 
@@ -64,3 +78,9 @@
 <b>Stop</b>
  
     customVideoPlayer.stop();
+    
+
+<h3>Author</h3>
+
+<b>Pavan Kumar Patruni</b>
+
