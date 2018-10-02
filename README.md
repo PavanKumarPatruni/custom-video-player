@@ -55,12 +55,6 @@ Customised controllers and methods.</p>
         .setOnPlaybackListener(this)
         .build();
     
-<b>Samples</b>
-
-<div>
-    <img src="https://github.com/PavanKumarPatruni/custom-video-player/blob/master/Screen%20Shot%202018-08-17%20at%203.32.24%20AM.png">
-</div>
-
 <b>Video Controllers</b>
 <br/>
 
@@ -76,6 +70,12 @@ Customised controllers and methods.</p>
  
     customVideoPlayer.stop();
     
+<b>Samples</b>
+
+<div>
+    <img src="https://github.com/PavanKumarPatruni/custom-video-player/blob/master/Screen%20Shot%202018-08-17%20at%203.32.24%20AM.png">
+</div>
+
 <h3>Author</h3>
 <b>Pavan Kumar Patruni (Email - pavanpathro@gmail.com)</b>
 
