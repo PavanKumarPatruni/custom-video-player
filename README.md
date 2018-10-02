@@ -55,13 +55,13 @@ Customised controllers and methods.</p>
         .setOnPlaybackListener(this)
         .build();
     
-<h3>Samples</h3>
+<b>Samples</b>
 
 <div>
     <img src="https://github.com/PavanKumarPatruni/custom-video-player/blob/master/Screen%20Shot%202018-08-17%20at%203.32.24%20AM.png">
 </div>
 
-<h3>Video Controllers</h3>
+<b>Video Controllers</b>
 <br/>
 
 <b>Play</b>
