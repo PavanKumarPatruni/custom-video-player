@@ -37,6 +37,18 @@
             android:visibility="gone" />
 
         <ImageView
+            android:id="@+id/imageViewPrev"
+            android:layout_width="@dimen/size_forty"
+            android:layout_height="@dimen/size_forty"
+            android:layout_gravity="center"
+            android:layout_marginEnd="@dimen/size_hundred"
+            android:layout_marginRight="@dimen/size_hundred"
+            android:background="@drawable/drawble_rounded_transparent_with_stroke"
+            android:padding="@dimen/size_five"
+            android:visibility="gone"
+            app:srcCompat="@drawable/exo_controls_previous" />
+
+        <ImageView
             android:id="@+id/imageViewPlay"
             android:layout_width="@dimen/size_fifty"
             android:layout_height="@dimen/size_fifty"
@@ -55,6 +67,18 @@
             android:padding="@dimen/size_five"
             android:visibility="gone"
             app:srcCompat="@drawable/exo_controls_pause" />
+
+        <ImageView
+            android:id="@+id/imageViewNext"
+            android:layout_width="@dimen/size_forty"
+            android:layout_height="@dimen/size_forty"
+            android:layout_gravity="center"
+            android:layout_marginStart="@dimen/size_hundred"
+            android:layout_marginLeft="@dimen/size_hundred"
+            android:background="@drawable/drawble_rounded_transparent_with_stroke"
+            android:padding="@dimen/size_five"
+            android:visibility="gone"
+            app:srcCompat="@drawable/exo_controls_next" />
 
     </FrameLayout>
 
