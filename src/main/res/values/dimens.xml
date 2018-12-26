@@ -7,4 +7,6 @@
     <dimen name="size_three">3dp</dimen>
     <dimen name="size_two">2dp</dimen>
     <dimen name="size_thirty_five">35dp</dimen>
+    <dimen name="size_forty">40dp</dimen>
+    <dimen name="size_hundred">100dp</dimen>
 </resources>
