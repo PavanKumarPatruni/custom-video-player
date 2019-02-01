@@ -11,10 +11,19 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <com.google.android.exoplayer2.ui.SimpleExoPlayerView
-            android:id="@+id/simpleExoPlayerView"
+        <com.google.android.exoplayer2.ui.AspectRatioFrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            app:resize_mode="fixed_width"
+            android:layout_gravity="center">
+
+            <com.google.android.exoplayer2.ui.SimpleExoPlayerView
+                android:id="@+id/simpleExoPlayerView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:resize_mode="fixed_width" />
+
+        </com.google.android.exoplayer2.ui.AspectRatioFrameLayout>
 
         <ImageView
             android:id="@+id/imageViewVolume"
@@ -32,7 +41,7 @@
             android:layout_width="@dimen/size_fifty"
             android:layout_height="@dimen/size_fifty"
             android:layout_gravity="center"
-            android:background="@drawable/drawble_rounded_transparent_with_stroke"
+            android:background="@drawable/drawable_rounded_transparent_with_stroke"
             android:padding="@dimen/size_ten"
             android:visibility="gone" />
 
@@ -43,42 +52,42 @@
             android:layout_gravity="center"
             android:layout_marginEnd="@dimen/size_hundred"
             android:layout_marginRight="@dimen/size_hundred"
-            android:background="@drawable/drawble_rounded_transparent_with_stroke"
+            android:background="@drawable/drawable_rounded_transparent_with_stroke"
             android:padding="@dimen/size_five"
-            android:visibility="gone"
-            app:srcCompat="@drawable/exo_controls_previous" />
+            android:src="@drawable/exo_controls_previous"
+            android:visibility="gone" />
 
         <ImageView
             android:id="@+id/imageViewPlay"
             android:layout_width="@dimen/size_fifty"
             android:layout_height="@dimen/size_fifty"
             android:layout_gravity="center"
-            android:background="@drawable/drawble_rounded_transparent_with_stroke"
+            android:background="@drawable/drawable_rounded_transparent_with_stroke"
             android:padding="@dimen/size_five"
-            android:visibility="gone"
-            app:srcCompat="@drawable/exo_controls_play" />
+            android:src="@drawable/exo_controls_play"
+            android:visibility="gone" />
 
         <ImageView
             android:id="@+id/imageViewPause"
             android:layout_width="@dimen/size_fifty"
             android:layout_height="@dimen/size_fifty"
             android:layout_gravity="center"
-            android:background="@drawable/drawble_rounded_transparent_with_stroke"
+            android:background="@drawable/drawable_rounded_transparent_with_stroke"
             android:padding="@dimen/size_five"
-            android:visibility="gone"
-            app:srcCompat="@drawable/exo_controls_pause" />
+            android:src="@drawable/exo_controls_pause"
+            android:visibility="gone" />
 
         <ImageView
             android:id="@+id/imageViewNext"
             android:layout_width="@dimen/size_forty"
             android:layout_height="@dimen/size_forty"
             android:layout_gravity="center"
-            android:layout_marginStart="@dimen/size_hundred"
             android:layout_marginLeft="@dimen/size_hundred"
-            android:background="@drawable/drawble_rounded_transparent_with_stroke"
+            android:layout_marginStart="@dimen/size_hundred"
+            android:background="@drawable/drawable_rounded_transparent_with_stroke"
             android:padding="@dimen/size_five"
-            android:visibility="gone"
-            app:srcCompat="@drawable/exo_controls_next" />
+            android:src="@drawable/exo_controls_next"
+            android:visibility="gone" />
 
     </FrameLayout>
 
@@ -86,7 +95,7 @@
         android:id="@+id/linearLayoutControls"
         android:layout_width="match_parent"
         android:layout_height="@dimen/size_fifty"
-        android:background="@color/color_transparent"
+        android:background="@color/color_video_transparent"
         android:orientation="horizontal"
         android:padding="@dimen/size_ten"
         android:visibility="gone"
