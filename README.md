@@ -1,10 +1,7 @@
 # Custom Video Player for Android
 
 <h3>Introduction</h3>
-<p>Custom Video Player is a library with simple and clean controllers that can embedded anywhere in Android Applications.
-It can play single or multiple videos from URL's.
-Added auto mute, auto play to manage video player.
-Customised controllers and methods.</p>
+<p>Custom Video Player is a library with simple and clean controllers that can be embedded anywhere in Android Applications. It can play single or multiple videos from URLs. Added auto mute, auto play to manage video player. Customized controllers and methods.</p>
 
 <h3>Documentation</h3>
 <b>Add to layout</b>
