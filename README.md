@@ -18,16 +18,7 @@
 <b>Single Video</b>
 
     customVideoPlayer.setMediaUrl("https://www.rmp-streaming.com/media/bbb-360p.mp4");
-
-<b>Multi Video</b>
-
-    List<String> listOfVideos = new ArrayList<>();
-    listOfVideos.add("http://mirrors.standaloneinstaller.com/video-sample/jellyfish-25-mbps-hd-hevc.3gp");
-    listOfVideos.add("http://mirrors.standaloneinstaller.com/video-sample/star_trails.mkv");
-    listOfVideos.add("https://www.rmp-streaming.com/media/bbb-360p.mp4");
     
-    customVideoPlayer.setMediaUrls(listOfVideos);
-
 <b>Auto Mute</b> (Default - false)
                        
     customVideoPlayer.enableAutoMute(true);
@@ -37,6 +28,13 @@
                        
     customVideoPlayer.enableAutoPlay(false);
     
+<b>Set MinHeight</b>
+                       
+    customVideoPlayer.setMinHeight(300);
+    
+<b>Set MaxHeight</b> (Default - true)
+                       
+    customVideoPlayer.setMaxHeight(500);
     
 <b>Manage Controllers</b> (Default - false)
                        
