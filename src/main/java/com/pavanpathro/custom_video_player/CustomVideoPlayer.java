@@ -5,20 +5,17 @@ import android.content.SharedPreferences;
 import android.graphics.PorterDuff;
 import android.media.AudioManager;
 import android.net.Uri;
-import android.os.Handler;
-import android.os.PowerManager;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
-import android.widget.TextView;
 
 import com.google.android.exoplayer2.DefaultLoadControl;
 import com.google.android.exoplayer2.DefaultRenderersFactory;
@@ -45,38 +42,21 @@ import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
 import com.google.android.exoplayer2.video.VideoRendererEventListener;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-
 public class CustomVideoPlayer extends LinearLayout {
 
     private static final String SHARED_PREF_NAME = "CUSTOM_VIDEO_PLAYER";
     private static final int PRIVATE_MODE = 0;
     private static final String KEY_VOLUME = "VOLUME_SETTINGS";
-    private static final String WAKE_LOCK_NAME = "customvideoplayer:wakelock";
 
     private Context context;
 
-    private SimpleExoPlayerView simpleExoPlayerView;
     private SimpleExoPlayer exoPlayer;
     private ProgressBar progressBar;
     private ImageView imageViewVolume;
-    private ImageView imageViewPlay;
-    private ImageView imageViewPause;
-    private ImageView imageViewPrev;
-    private ImageView imageViewNext;
-    private LinearLayout linearLayoutControls;
-    private TextView textViewPlayBackPosition;
-    private TextView textViewPlayBackRemaining;
-    private SeekBar seekBarVideo;
 
     private DefaultBandwidthMeter defaultBandwidthMeter;
     private VideoPlayerListener videoPlayerListener;
 
-    private PowerManager.WakeLock wakeLock;
-
-    private List<String> urlList;
     private long playBackPosition = 0;
 
     private boolean autoPlay;
@@ -85,22 +65,18 @@ public class CustomVideoPlayer extends LinearLayout {
     private boolean autoMuteSetByUser;
 
     private boolean playVideo;
-    private boolean pauseVideo;
-    private boolean buffering;
-
-    private boolean isVideoViewClicked;
 
     private PlaybackListener playbackListener;
 
     private SharedPreferences sharedPreferences;
 
-    private Handler seekBarHandler;
-    private Runnable seekBarRunnable;
+    private int maxHeight;
+    private int minHeight;
 
-    private Handler controllersHandler;
-    private Runnable controllersRunnable;
+    private String mediaUrl;
 
-    private int urlIndex = 0;
+    private SimpleExoPlayerView simpleExoPlayerView;
+    private AudioManager audioManager;
 
     public CustomVideoPlayer(Context context) {
         super(context);
@@ -121,14 +97,7 @@ public class CustomVideoPlayer extends LinearLayout {
     }
 
     public CustomVideoPlayer setMediaUrl(String mediaUrl) {
-        List<String> urlList = new ArrayList<>();
-        urlList.add(mediaUrl);
-        this.urlList = urlList;
-        return this;
-    }
-
-    public CustomVideoPlayer setMediaUrls(List<String> urlList) {
-        this.urlList = urlList;
+        this.mediaUrl = mediaUrl;
         return this;
     }
 
@@ -141,6 +110,16 @@ public class CustomVideoPlayer extends LinearLayout {
         autoMuteSetByUser = true;
 
         this.autoMute = autoMute;
+        return this;
+    }
+
+    public CustomVideoPlayer setMaxHeight(int maxHeight) {
+        this.maxHeight = maxHeight;
+        return this;
+    }
+
+    public CustomVideoPlayer setMinHeight(int minHeight) {
+        this.minHeight = minHeight;
         return this;
     }
 
@@ -175,7 +154,6 @@ public class CustomVideoPlayer extends LinearLayout {
     }
 
     public void play() {
-        buffering = false;
         startPlayBack();
     }
 
@@ -186,27 +164,7 @@ public class CustomVideoPlayer extends LinearLayout {
     private void init(Context context) {
         this.context = context;
 
-        seekBarHandler = new Handler();
-        seekBarRunnable = new Runnable() {
-            @Override
-            public void run() {
-                updateTimers();
-            }
-        };
-
-        controllersHandler = new Handler();
-        controllersRunnable = new Runnable() {
-            @Override
-            public void run() {
-                isVideoViewClicked = false;
-                setControlsInvisible();
-            }
-        };
-
         sharedPreferences = context.getSharedPreferences(SHARED_PREF_NAME, PRIVATE_MODE);
-
-        PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
-        wakeLock = powerManager.newWakeLock(PowerManager.FULL_WAKE_LOCK, WAKE_LOCK_NAME);
 
         defaultBandwidthMeter = new DefaultBandwidthMeter();
         videoPlayerListener = new VideoPlayerListener();
@@ -218,38 +176,49 @@ public class CustomVideoPlayer extends LinearLayout {
         exoPlayer.addListener(videoPlayerListener);
     }
 
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int parentWidth = MeasureSpec.getSize(widthMeasureSpec);
+        int parentHeight = MeasureSpec.getSize(heightMeasureSpec);
+        this.setMeasuredDimension(parentWidth, parentHeight);
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+    }
+
     private void initializeVideoPlayerView() {
         try {
             LayoutInflater layoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             View view = layoutInflater.inflate(R.layout.layout_video_player, this, false);
 
-            ConstraintLayout constraintLayoutParent = view.findViewById(R.id.constraintLayoutParent);
-            simpleExoPlayerView = view.findViewById(R.id.simpleExoPlayerView);
+            final ConstraintLayout constraintLayoutParent = view.findViewById(R.id.constraintLayoutParent);
 
-            constraintLayoutParent.setMaxHeight(getResources().getDisplayMetrics().heightPixels * 3 / 5);
+            ViewGroup.LayoutParams layoutParams = constraintLayoutParent.getLayoutParams();
+            layoutParams.width = this.getLayoutParams().width;
+            layoutParams.height = this.getLayoutParams().height;
+
+            if (minHeight != 0) {
+                constraintLayoutParent.setMinHeight(minHeight);
+            }
+
+            if (maxHeight != 0) {
+                constraintLayoutParent.setMaxHeight(maxHeight);
+                layoutParams.height = maxHeight;
+            }
+
+            constraintLayoutParent.setLayoutParams(layoutParams);
+
+            audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+
+            simpleExoPlayerView = view.findViewById(R.id.simpleExoPlayerView);
+            simpleExoPlayerView.setUseController(!hideControllers);
+            simpleExoPlayerView.setControllerShowTimeoutMs(1500);
+            simpleExoPlayerView.hideController();
 
             progressBar = view.findViewById(R.id.progressBar);
             progressBar.getIndeterminateDrawable().setColorFilter(context.getResources().getColor(R.color.color_white), PorterDuff.Mode.MULTIPLY);
 
             imageViewVolume = view.findViewById(R.id.imageViewVolume);
-            imageViewPlay = view.findViewById(R.id.imageViewPlay);
-            imageViewPause = view.findViewById(R.id.imageViewPause);
-            imageViewPrev = view.findViewById(R.id.imageViewPrev);
-            imageViewNext = view.findViewById(R.id.imageViewNext);
-
-            linearLayoutControls = view.findViewById(R.id.linearLayoutControls);
-            textViewPlayBackPosition = view.findViewById(R.id.textViewPlayBackPosition);
-            textViewPlayBackRemaining = view.findViewById(R.id.textViewPlayBackRemaining);
-            seekBarVideo = view.findViewById(R.id.seekBarVideo);
-
             imageViewVolume.setOnClickListener(videoPlayerListener);
-            imageViewPlay.setOnClickListener(videoPlayerListener);
-            imageViewPause.setOnClickListener(videoPlayerListener);
-            imageViewPrev.setOnClickListener(videoPlayerListener);
-            imageViewNext.setOnClickListener(videoPlayerListener);
-            seekBarVideo.setOnSeekBarChangeListener(videoPlayerListener);
 
-            simpleExoPlayerView.setUseController(false);
             simpleExoPlayerView.setPlayer(exoPlayer);
 
             prepareVideoPlayer();
@@ -260,54 +229,37 @@ public class CustomVideoPlayer extends LinearLayout {
         }
     }
 
-    private void playNext() {
-        if (urlIndex < urlList.size()) {
-            urlIndex++;
-            prepareVideoPlayer();
-        } else {
-            urlIndex--;
-        }
-    }
+    public void changeUrl(String newMediaUrl) {
+        this.mediaUrl = newMediaUrl;
 
-    public void changeUrl(String url) {
-        try {
-            playBackPosition = 0;
-
-            MediaSource datasource = buildMediaStore(url);
-            exoPlayer.prepare(datasource, true, true);
-
-            if (autoPlay) {
-                startPlayBack();
-            } else {
-                setPlayVisible();
-            }
-
-            getVolumeSettings();
-            manageMute();
-        } catch (Exception e) {
-            resetVideoPlayer();
-        }
-    }
-
-    private void playPrev() {
-        if (urlIndex != 0) {
-            urlIndex--;
-            prepareVideoPlayer();
-        }
+        prepareVideoPlayer();
     }
 
     private void prepareVideoPlayer() {
-        if (urlIndex < urlList.size()) {
-            changeUrl(urlList.get(urlIndex));
+        try {
+            if (mediaUrl != null) {
+                playBackPosition = 0;
+
+                MediaSource mediaSource = buildMediaStore(mediaUrl);
+                exoPlayer.prepare(mediaSource, true, true);
+
+                if (autoPlay) {
+                    startPlayBack();
+                }
+
+                getVolumeSettings();
+                manageMute();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            resetVideoPlayer();
         }
     }
 
     private void resetVideoPlayer() {
         playVideo = false;
         playBackPosition = 0;
-        setControlsInvisible();
         progressBar.setVisibility(GONE);
-        setPlayVisible();
         if (playbackListener != null) {
             playbackListener.onCompletedEvent();
         }
@@ -325,107 +277,13 @@ public class CustomVideoPlayer extends LinearLayout {
         }
     }
 
-    private void setPlayVisible() {
-//        if (!hideControllers) {
-        imageViewPlay.setVisibility(VISIBLE);
-//        }
-    }
-
-    private void setPlayInvisible() {
-        if (!pauseVideo) {
-            imageViewPlay.setVisibility(GONE);
-        }
-    }
-
-    private void setControlsVisibleWithConditions() {
-        if (playVideo && !buffering) {
-            setControlsVisible();
-        }
-    }
-
-    private void setControlsVisible() {
-        if (imageViewPause.getVisibility() != VISIBLE) {
-            imageViewPause.setVisibility(VISIBLE);
-
-            if (hideControllers) {
-                linearLayoutControls.setVisibility(GONE);
-            } else {
-                linearLayoutControls.setVisibility(VISIBLE);
-            }
-
-            if (urlList.size() > 1) {
-                if (urlIndex > 0) {
-                    imageViewPrev.setVisibility(VISIBLE);
-                }
-                if (urlIndex < urlList.size() - 1) {
-                    imageViewNext.setVisibility(VISIBLE);
-                }
-            } else {
-                imageViewNext.setVisibility(INVISIBLE);
-                imageViewPrev.setVisibility(INVISIBLE);
-            }
-
-            setControlsDelayInvisible();
-        }
-    }
-
-    private void setControlsDelayInvisible() {
-        controllersHandler.postDelayed(controllersRunnable, 10 * 1007);
-    }
-
-    private void setControlsInvisible() {
-        imageViewPause.setVisibility(GONE);
-        linearLayoutControls.setVisibility(GONE);
-        imageViewPrev.setVisibility(INVISIBLE);
-        imageViewNext.setVisibility(INVISIBLE);
-    }
-
-    private String convertToTime(long time) {
-        StringBuilder stringTime = new StringBuilder();
-
-        stringTime.append(String.format(Locale.ENGLISH, "%2d", Math.round(time / (1007 * 60))));
-        stringTime.append(":");
-
-        int seconds = Math.round((time % (1007 * 60) / 1000));
-        stringTime.append(String.format(Locale.ENGLISH, seconds > 9 ? "%2d" : "0%d", seconds));
-
-        return String.valueOf(stringTime);
-    }
-
-    private void updateTimers() {
-        try {
-            textViewPlayBackRemaining.setText(String.format(Locale.ENGLISH, "-%s", convertToTime(exoPlayer.getDuration() - exoPlayer.getCurrentPosition())));
-            textViewPlayBackPosition.setText(convertToTime(exoPlayer.getCurrentPosition()));
-            seekBarVideo.setProgress((int) (exoPlayer.getCurrentPosition()));
-
-            if (playVideo) {
-                if (imageViewPlay.getVisibility() == VISIBLE) {
-                    setPlayInvisible();
-                }
-
-                if (!isVideoViewClicked && imageViewPause.getVisibility() == VISIBLE) {
-                    setControlsDelayInvisible();
-                }
-            }
-
-            seekBarHandler.postDelayed(seekBarRunnable, 1007);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     private void pausePlayBack() {
         if (exoPlayer != null) {
-            pauseVideo = true;
             playVideo = false;
 
             if (playbackListener != null) {
                 playbackListener.onPauseEvent();
             }
-
-            setControlsInvisible();
-            setPlayVisible();
 
             playBackPosition = exoPlayer.getCurrentPosition();
             exoPlayer.setPlayWhenReady(false);
@@ -434,50 +292,24 @@ public class CustomVideoPlayer extends LinearLayout {
 
     private void startPlayBack() {
         if (exoPlayer != null) {
+            playVideo = true;
 
-            AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-
-            int result = audioManager.requestAudioFocus(focusChangeListener,
-                    AudioManager.STREAM_MUSIC,
-                    AudioManager.AUDIOFOCUS_GAIN);
-
-            if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                playVideo = true;
-                pauseVideo = false;
-
-                if (playbackListener != null) {
-                    playbackListener.onPlayEvent();
-                }
-
-                setPlayInvisible();
-                setControlsInvisible();
-
-                updateTimers();
-
-                exoPlayer.setPlayWhenReady(true);
-                exoPlayer.seekTo(playBackPosition);
+            if (playbackListener != null) {
+                playbackListener.onPlayEvent();
             }
+
+            exoPlayer.setPlayWhenReady(true);
+            exoPlayer.seekTo(playBackPosition);
         }
     }
 
     private void releasePlayer() {
         if (exoPlayer != null) {
-            pauseVideo = true;
             playVideo = false;
 
             context = null;
 
-            seekBarHandler.removeCallbacks(seekBarRunnable);
-            controllersHandler.removeCallbacks(controllersRunnable);
-
-            seekBarHandler = null;
-            controllersHandler = null;
-
-            try {
-                wakeLock.release();
-            } catch (Throwable th) {
-                th.printStackTrace();
-            }
+            audioManager.abandonAudioFocus(focusChangeListener);
 
             exoPlayer.stop();
             exoPlayer.setPlayWhenReady(false);
@@ -500,22 +332,21 @@ public class CustomVideoPlayer extends LinearLayout {
         imageViewVolume.setSelected(autoMute);
         if (autoMute) {
             exoPlayer.setVolume(0f);
+
+            audioManager.abandonAudioFocus(focusChangeListener);
+
         } else {
             exoPlayer.setVolume(1f);
+
+            audioManager.requestAudioFocus(focusChangeListener,
+                    AudioManager.STREAM_MUSIC,
+                    AudioManager.AUDIOFOCUS_GAIN);
         }
         saveVolumeSettings();
     }
 
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        if (imageViewPause.getVisibility() != VISIBLE) {
-            isVideoViewClicked = true;
-            setControlsVisibleWithConditions();
-        }
-        return true;
-    }
-
     private AudioManager.OnAudioFocusChangeListener focusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+
         public void onAudioFocusChange(int focusChange) {
             switch (focusChange) {
                 case (AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK):
@@ -536,30 +367,15 @@ public class CustomVideoPlayer extends LinearLayout {
         }
     };
 
-    private class VideoPlayerListener implements View.OnClickListener, SeekBar.OnSeekBarChangeListener, ExoPlayer.EventListener, VideoRendererEventListener, AudioRendererEventListener {
+    private class VideoPlayerListener implements OnClickListener, SeekBar.OnSeekBarChangeListener, ExoPlayer.EventListener, VideoRendererEventListener, AudioRendererEventListener {
 
         @Override
         public void onClick(View view) {
             int viewId = view.getId();
-            if (viewId == R.id.imageViewPlay) {
-                if (playbackListener != null) {
-                    playbackListener.onPlayClick();
-                }
-                startPlayBack();
-            } else if (viewId == R.id.imageViewPause) {
-                if (playbackListener != null) {
-                    playbackListener.onPauseClick();
-                }
-                pausePlayBack();
-            } else if (viewId == R.id.imageViewVolume) {
+            if (viewId == R.id.imageViewVolume) {
+                playbackListener.onVolumeChange(autoMute);
                 autoMute = !autoMute;
                 manageMute();
-            } else if (viewId == R.id.imageViewPrev) {
-                playPrev();
-                prepareVideoPlayer();
-            } else if (viewId == R.id.imageViewNext) {
-                playNext();
-                prepareVideoPlayer();
             }
         }
 
@@ -575,7 +391,6 @@ public class CustomVideoPlayer extends LinearLayout {
 
         @Override
         public void onStopTrackingTouch(SeekBar seekBar) {
-            playBackPosition = seekBarVideo.getProgress();
             startPlayBack();
         }
 
@@ -600,28 +415,18 @@ public class CustomVideoPlayer extends LinearLayout {
                 case ExoPlayer.STATE_IDLE:
                     break;
                 case ExoPlayer.STATE_READY:
+                    simpleExoPlayerView.hideController();
                     playVideo = true;
-                    buffering = false;
                     progressBar.setVisibility(GONE);
-                    wakeLock.acquire(exoPlayer.getDuration() + 5000);
-                    seekBarVideo.setMax((int) exoPlayer.getDuration());
-                    setControlsInvisible();
-                    setPlayInvisible();
-                    updateTimers();
                     break;
                 case ExoPlayer.STATE_BUFFERING:
-                    buffering = true;
-                    setControlsInvisible();
-                    setPlayInvisible();
                     if (progressBar.getVisibility() != VISIBLE) {
+                        simpleExoPlayerView.hideController();
                         progressBar.setVisibility(VISIBLE);
                     }
                     break;
                 case ExoPlayer.STATE_ENDED:
                     resetVideoPlayer();
-                    if (urlIndex < urlList.size()) {
-                        playNext();
-                    }
                     break;
             }
         }
@@ -726,9 +531,7 @@ public class CustomVideoPlayer extends LinearLayout {
 
     public interface PlaybackListener {
 
-        void onPlayClick();
-
-        void onPauseClick();
+        void onVolumeChange(boolean volumeOn);
 
         void onPlayEvent();
 

@@ -1,5 +1,3 @@
 <resources>
     <string name="app_name">custom-video-player</string>
-    <string name="back">Back</string>
-    <string name="video_title">Title</string>
 </resources>

@@ -4,6 +4,6 @@
     <solid android:color="@color/color_video_transparent" />
     <corners android:radius="@dimen/size_fifty" />
     <stroke
-        android:width="@dimen/size_two"
+        android:width="@dimen/size_one"
         android:color="@color/color_white" />
 </shape>
