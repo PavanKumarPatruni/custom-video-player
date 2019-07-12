@@ -32,7 +32,7 @@
                        
     customVideoPlayer.setMinHeight(300);
     
-<b>Set MaxHeight</b> (Default - true)
+<b>Set MaxHeight</b>
                        
     customVideoPlayer.setMaxHeight(500);
     
